@@ -11,9 +11,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/aeswnh/ummodcore"><img src="https://img.shields.io/github/stars/aeswnh/ummodcore?style=flat-square&color=yellow" alt="Stars"/></a>
-  <a href="https://github.com/aeswnh/ummodcore/fork"><img src="https://img.shields.io/github/forks/aeswnh/ummodcore?style=flat-square&color=orange" alt="Forks"/></a>
-  <a href="https://github.com/aeswnh/ummodcore"><img src="https://img.shields.io/github/repo-size/aeswnh/ummodcore?style=flat-square&color=green" alt="Repo Size"/></a>
+  <a href="https://github.com/aeswnh/umodcore"><img src="https://img.shields.io/github/stars/aeswnh/umodcore?style=flat-square&color=yellow" alt="Stars"/></a>
+  <a href="https://github.com/aeswnh/umodcore/fork"><img src="https://img.shields.io/github/forks/aeswnh/umodcore?style=flat-square&color=orange" alt="Forks"/></a>
+  <a href="https://github.com/aeswnh/umodcore"><img src="https://img.shields.io/github/repo-size/aeswnh/umodcore?style=flat-square&color=green" alt="Repo Size"/></a>
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version"/>
   <img src="https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square" alt="License"/>
   <img src="https://img.shields.io/badge/Maintained-Yes-brightgreen?style=flat-square" alt="Maintained"/>
@@ -51,8 +51,8 @@ Berikut command yang tersedia (pakai titik, bukan slash!):
 ### 1. Clone repo
 
 ```bash
-git clone https://github.com/aeswnh/ummodcore.git
-cd ummodcore
+git clone https://github.com/aeswnh/umodcore.git
+cd umodcore
 ```
 
 ### 2. Install requirements
@@ -80,7 +80,7 @@ SESSION_STRING = "your_session_string_here"
 
 OWNER_ID = 123456789 
 OWNER_USERNAME = "your_username_here"
-SOURCE_CODE = "https://github.com/aeswnh/ummodcore"
+SOURCE_CODE = "https://github.com/aeswnh/umodcore"
 LOG_CHANNEL = -123456789
 ```
 
@@ -117,13 +117,13 @@ This project is licensed under the [MIT License](LICENSE).
 
 We welcome contributions from the community! 🤩
 
-* Found a bug? [Open an issue](https://github.com/aeswnh/ummodcore/issues).
-* Got a feature idea? [Start a discussion](https://github.com/aeswnh/ummodcore/discussions).
+* Found a bug? [Open an issue](https://github.com/aeswnh/umodcore/issues).
+* Got a feature idea? [Start a discussion](https://github.com/aeswnh/umodcore/discussions).
 * Want to improve code? Just fork the repo, push changes, and make a PR!
 
 Your contributions are appreciated and will be credited ✨
 
-Looking for your first contribution? Check out our [good first issues](https://github.com/aeswnh/ummodcore/labels/good%20first%20issue)!
+Looking for your first contribution? Check out our [good first issues](https://github.com/aeswnh/umodcore/labels/good%20first%20issue)!
 
 Participating in Hacktoberfest? Your PRs here count!
 
