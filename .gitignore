@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Gitpod-specific
+.gitpod.yml
+
+# Virtualenv / Python environment
+.env
+.venv
+env/
+venv/
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+*.swp
+
+# Custom files
+config.py
+.restart_chat_id
+.restart_time
