@@ -1,20 +1,31 @@
-# ModCore - UserBot (Pyrogram Version)
-# Copyright (C) 2025 aesneverhere
+# ModCore - UserBot (Telethon Version)
+# Copyright (C) 2025 aeswnh
 
-from pyrogram import Client, filters
-from pyrogram.types import Message
-import config
+from telethon import TelegramClient, events
+from utils.core import (
+    owner_only,
+    handle_error,
+    eor,
+    register_command
+)
 
-def register_uinfo(app: Client):
-    @app.on_message(filters.command("uinfo", prefixes=".") & filters.user(int(config.OWNER_ID)))
-    async def uinfo(client: Client, message: Message):
-        target = message.reply_to_message.from_user if message.reply_to_message else message.from_user
+def register_uinfo(client: TelegramClient):
+    @register_command(client, "uinfo", owner_only=True)
+    @handle_error
+    async def uinfo(event):
+        target = None
+        if event.is_reply:
+            r_msg = await event.get_reply_message()
+            target = await r_msg.get_sender()
+        else:
+            target = await event.get_sender()
+
         text = (
             f"👤 <b>User Info</b>\n"
             f"🆔 ID       : <code>{target.id}</code>\n"
             f"🔗 Username : @{target.username if target.username else 'Tidak ada'}\n"
             f"📛 Nama     : {target.first_name} {target.last_name or ''}\n"
-            f"🛡️ Premium  : {'✅ Ya' if target.is_premium else '❌ Tidak'}\n"
-            f"🤖 Bot      : {'Ya' if target.is_bot else 'Bukan'}"
+            f"🛡️ Premium  : {'✅ Ya' if getattr(target, 'premium', False) else '❌ Tidak'}\n"
+            f"🤖 Bot      : {'Ya' if target.bot else 'Bukan'}"
         )
-        await message.reply_text(text)
+        await eor(event, text, parse_mode='html')

@@ -1,36 +1,30 @@
-# ModCore - UserBot (Pyrogram Version)
-# Copyright (C) 2025 aesneverhere
+# ModCore - UserBot (Telethon Version)
+# Copyright (C) 2025 aeswnh
 
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from config import OWNER_ID
-import importlib
-import os
-import sys
+from telethon import TelegramClient
+from utils.core import (
+    handle_error,
+    eor,
+    register_command,
+    reload_plugins,
+    is_admin
+)
 
-def register_reload(app: Client):
-    @app.on_message(filters.command("reload", prefixes=".") & filters.user(int(OWNER_ID)))
-    async def handle_reload(client, message: Message):
-        folder = "plugins"
-        sukses = []
-        gagal = []
-
-        for file in os.listdir(folder):
-            if file.endswith(".py"):
-                modname = f"{folder}.{file[:-3]}"
-                try:
-                    if modname in sys.modules:
-                        importlib.reload(sys.modules[modname])
-                    else:
-                        importlib.import_module(modname)
-                    sukses.append(file)
-                except Exception as e:
-                    gagal.append(f"{file} → {e}")
-
-        output = "🔄 Reload Result\n"
-        if sukses:
-            output += "\n✅ Berhasil:\n" + "\n".join(f"• {x}" for x in sukses)
-        if gagal:
-            output += "\n\n❌ Gagal:\n" + "\n".join(f"• {x}" for x in gagal)
-
-        await message.reply_text(output)
+def register_reload(client: TelegramClient):
+    @register_command(client, "reload")
+    @handle_error
+    async def handle_reload(event):
+        """Reload all plugins (Admin only)"""
+        # Check if user is admin (owner or sudo)
+        if not is_admin(event.sender_id):
+            await eor(event, "⛔ Perintah ini hanya untuk admin bot!")
+            return
+            
+        status_msg = await eor(event, "🔄 Memuat ulang plugins...")
+        successful, failed = reload_plugins(client)
+        output = "🔄 Hasil Reload\n"
+        if successful:
+            output += "\n✅ Berhasil:\n" + "\n".join(f"• {x}" for x in successful)
+        if failed:
+            output += "\n\n❌ Gagal:\n" + "\n".join(f"• {x}" for x in failed)
+        await status_msg.edit(output)
