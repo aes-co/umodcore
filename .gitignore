@@ -20,3 +20,5 @@ Thumbs.db
 config.py
 .restart_chat_id
 .restart_time
+bot_session
+sudo_user.txt
