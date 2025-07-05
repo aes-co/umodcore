@@ -3,7 +3,7 @@ from utils.core import register_command, eor, handle_error
 import json
 import os
 
-LANG_DIR = "umodcore/lang"
+LANG_DIR = "lang"
 DEFAULT_LANG = "en"
 
 def load_language(lang_code):

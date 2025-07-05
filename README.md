@@ -2,12 +2,10 @@
   <img src="https://github.com/images/mona-whisper.gif" alt="uModCore Cat Logo" width="150"/>
 </p>
 
-<h1 align="center">
-  <b>uModCore - Telegram Userbot</b>
-</h1>
+<h1 align="center"><b>uModCore — Telegram Userbot</b></h1>
 
 <p align="center">
-  A modular, fast and minimal Telegram Userbot built using Pyrogram.
+  A modular, fast, and minimal Telegram Userbot built using Telethon.
 </p>
 
 <p align="center">
@@ -25,24 +23,29 @@
 
 ## 🧠 Overview
 
-**uModCore** adalah userbot Telegram modular yang simple, powerful, dan ringan.
-Dibangun menggunakan Pyrogram, terinspirasi dari [Ultroid](https://github.com/TeamUltroid/Ultroid) dan pengembangan [ModCore Bot](https://github.com/aes-co/modcore).
+**uModCore** adalah userbot Telegram modular yang simple, powerful, dan ringan.  
+Dibangun menggunakan Telethon, terinspirasi dari [Ultroid](https://github.com/TeamUltroid/Ultroid) dan pengembangan [ModCore Bot](https://github.com/aes-co/modcore).
 
 ---
 
 ## 🚀 Features
 
-Command tersedia (pakai titik, bukan slash!):
+Perintah tersedia (pakai titik, bukan slash!):
 
-* `.ping` — Cek latency
-* `.me` — Info akun kamu
-* `.uinfo` — Info user lain
-* `.alive` — Status hidup
-* `.afk` — Auto-reply AFK
-* `.log` — Kirim pesan ke log group
-* `.restart` — Restart bot + auto notify
-* `.reload` — Reload plugin tanpa restart
-* `.umodcore` — Tentang uModCore
+- `.ping` — Cek latency
+- `.dl` — Mengunduh media dari berbagai sumber
+- `.me` — Info akun kamu
+- `.uinfo` — Info user lain
+- `.alive` — Status hidup
+- `.afk` — Auto-reply AFK
+- `.log` — Kirim pesan ke log group
+- `.restart` — Restart bot + auto notify
+- `.reload` — Reload plugin tanpa restart
+- `.umodcore` — Tentang uModCore
+- `.save` — Menyimpan catatan
+- `.notes` — Menampilkan daftar catatan
+- `.clear` — Menghapus catatan
+- `.setwelcome` — Mengatur pesan selamat datang
 
 ---
 
@@ -72,8 +75,6 @@ python generate_session.py
 Salin dan isi `config_sample.py` ke `config.py`:
 
 ```python
-# Sample Configuration for uModCore Userbot
-
 API_ID = 12345678  # Ganti dengan API ID kamu
 API_HASH = "your_api_hash_here"
 SESSION_STRING = "your_session_string_here"
@@ -94,23 +95,31 @@ python main.py
 
 ## 📂 Plugin System
 
-* Semua plugin ditaruh di folder `plugins/`
-* Daftar plugin diatur lewat `main.py`
-* Gunakan `.reload` untuk memuat ulang plugin saat runtime
+- Semua plugin disimpan di folder `plugins/`
+- Plugin dimuat secara dinamis dari `main.py`
+- Gunakan `.reload` untuk memuat ulang plugin saat runtime
 
 ---
 
 ## 🤝 Credits
 
-* [Pyrogram](https://github.com/pyrogram/pyrogram)
-* [TeamUltroid](https://github.com/TeamUltroid) — struktur inspirasi
-* [aesneverhere](https://t.me/aesneverhere) — pencipta awal ModCore & uModCore
+### Core & Inspirasi
+
+- **[Telethon](https://github.com/LonamiWebs/Telethon)** — Framework utama userbot ini.
+- **[TeamUltroid](https://github.com/TeamUltroid)** — Inspirasi struktur modular dan arsitektur.
+- **[aesneverhere](https://t.me/aesneverhere)** — Developer utama & pencipta ModCore/uModCore.
+
+### Fitur Downloader
+
+- **[mirror-leech-telegram-bot](https://github.com/anasty17/mirror-leech-telegram-bot)** — Basis logika downloader.
+- **[Aria2](https://github.com/aria2/aria2)** — Engine download kuat untuk HTTP, torrent, dan magnet.
+- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** — Alat utama untuk ekstraksi video/audio.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
 ---
 
@@ -118,13 +127,13 @@ This project is licensed under the [MIT License](LICENSE).
 
 We welcome contributions from the community! 😍
 
-* Found a bug? [Open an issue](https://github.com/aes-co/umodcore/issues)
-* Got a feature idea? [Start a discussion](https://github.com/aes-co/umodcore/discussions)
-* Want to improve code? Just **fork → commit → PR**
+- Found a bug? [Open an issue](https://github.com/aes-co/umodcore/issues)
+- Got a feature idea? [Start a discussion](https://github.com/aes-co/umodcore/discussions)
+- Want to improve code? Just **fork → commit → PR**
 
 Looking for your first contribution? Check our [good first issues](https://github.com/aes-co/umodcore/labels/good%20first%20issue)!
 
-Participating in Hacktoberfest? Your PRs here count!
+Hacktoberfest participant? Your PRs here count too!
 
 ---
 

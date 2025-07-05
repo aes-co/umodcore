@@ -146,7 +146,6 @@ async def reply_message_queued(message, *args, **kwargs):
 
 # Setup logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 # Global state management
 class BotState:
@@ -287,7 +286,7 @@ async def handle_command(event, func, owner_only_check):
         await func(event)
     except Exception as e:
         logger.error(f"Error in command: {e}")
-        await eor(event, f"❌ Terjadi kesalahan: {str(e)}")
+        await eor(event, f"❌ Terjadi kesalahan tak terduga. Insiden ini telah dicatat.")
 
 # Error handling
 def handle_error(func: Callable) -> Callable:
@@ -297,9 +296,8 @@ def handle_error(func: Callable) -> Callable:
         try:
             return await func(event, *args, **kwargs)
         except Exception as e:
-            error_msg = f"❌ Terjadi kesalahan:\n`{str(e)}`"
             logger.error(f"Error in {func.__name__}: {e}")
-            await eor(event, error_msg)
+            await eor(event, "❌ Terjadi kesalahan tak terduga. Insiden ini telah dicatat.")
     return wrapper
 
 # Message formatting helpers
@@ -316,19 +314,29 @@ def italic(text: str) -> str:
     return f"_{text}_"
 
 # Plugin registration helper
-def register_plugin(client: TelegramClient, plugin_name: str) -> None:
-    """Helper to register plugin and its commands"""
-    logger.info(f"Loading plugin: {plugin_name}")
-    try:
-        module = __import__(f"plugins.{plugin_name}", fromlist=["*"])
-        if hasattr(module, "register"):
-            module.register(client)
-            logger.info(f"Successfully loaded plugin: {plugin_name}")
-        else:
-            logger.warning(f"Plugin {plugin_name} has no register function")
-    except Exception as e:
-        logger.error(f"Failed to load plugin {plugin_name}: {e}")
-        raise e
+def load_plugins(client: TelegramClient):
+    """Dynamically load all plugins"""
+    import os
+    import importlib
+    import sys
+    # Pastikan root project ada di sys.path
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    if root_dir not in sys.path:
+        sys.path.insert(0, root_dir)
+    plugins_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'plugins')
+    for file in os.listdir(plugins_dir):
+        if file.endswith(".py") and not file.startswith("__"):
+            plugin_name = file[:-3]
+            try:
+                module = importlib.import_module(f"plugins.{plugin_name}")
+                register_function_name = f"register_{plugin_name}"
+                if hasattr(module, register_function_name):
+                    getattr(module, register_function_name)(client)
+                    logger.info(f"Successfully loaded plugin: {plugin_name}")
+                else:
+                    logger.warning(f"Plugin {plugin_name} does not have a {register_function_name} function.")
+            except Exception as e:
+                logger.error(f"Failed to load plugin {plugin_name}: {e}")
 
 def reload_plugins(client: TelegramClient) -> tuple[list, list]:
     """Reload all plugins in the plugins directory"""

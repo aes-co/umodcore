@@ -1,16 +1,21 @@
 # ModCore - UserBot (Telethon Version)
 # Copyright (C) 2025 aeswnh
 
+import os
 import asyncio
 import os
+import logging
+import sys
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from dotenv import load_dotenv
-from plugins import (
-    ping, me, uinfo, reload, restart,
-    alive, log, afk, umodcore, help,
-    speedtest, start, auth, scheduler, customcmd, chatstats, automod, multilang, mediadl, inlinequery, reputation
-)
+from utils.core import load_plugins
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'umodcore.log')), logging.StreamHandler()])
+logger = logging.getLogger(__name__)
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Load environment variables
 load_dotenv()
@@ -27,85 +32,6 @@ client = TelegramClient(
     API_HASH
 )
 
-# Register plugins
-ping.register_ping(client)
-me.register_me(client)
-uinfo.register_uinfo(client)
-reload.register_reload(client)
-restart.register_restart(client)
-alive.register_alive(client)
-log.register_log(client)
-afk.register_afk(client)
-umodcore.register_umodcore(client)
-help.register_help(client)
-speedtest.register_speedtest(client)
-start.register_start(client)
-auth.register_auth(client)  # Register auth plugin for sudo management
-scheduler.register_scheduler(client)
-customcmd.register_customcmd(client)
-chatstats.register_chatstats(client)
-automod.register_automod(client)
-multilang.register_multilang(client)
-mediadl.register_mediadl(client)
-inlinequery.register_inlinequery(client)
-reputation.register_reputation(client)
-
-notified = True
-
-@client.on(events.NewMessage)
-async def notify_restart(event):
-    global notified
-    if not notified and os.path.exists(".restart_chat_id"):
-        try:
-            import time
-            import psutil
-            import platform
-            
-            with open(".restart_chat_id") as f:
-                cid = int(f.read().strip())
-            
-            # Get restart duration
-            restart_duration = "?"
-            if os.path.exists(".restart_time"):
-                with open(".restart_time") as f:
-                    try:
-                        restart_duration = f"{round(time.time() - float(f.read()), 2)}s"
-                    except:
-                        restart_duration = "Unknown"
-            
-            # Get system info
-            cpu = platform.processor() or "Unknown"
-            os_name = platform.system()
-            os_ver = platform.release()
-            mem = psutil.virtual_memory()
-            ram_usage = f"{mem.used // (1024**2)} / {mem.total // (1024**2)} MB"
-            python_ver = platform.python_version()
-            
-            # Calculate ping (simple method)
-            start_time = time.time()
-            await client.get_me()
-            ping_ms = round((time.time() - start_time) * 1000, 2)
-            
-            restart_msg = (
-                f"✅ **Userbot berhasil restart!**\n\n"
-                f"⏱️ Restart Duration: `{restart_duration}`\n"
-                f"🏓 Ping: `{ping_ms}ms`\n\n"
-                f"💻 **System Info:**\n"
-                f"OS: `{os_name} {os_ver}`\n"
-                f"CPU: `{cpu}`\n"
-                f"RAM: `{ram_usage}`\n"
-                f"Python: `{python_ver}`\n\n"
-                f"🚀 Bot siap digunakan!"
-            )
-            
-            await client.send_message(cid, restart_msg)
-            os.remove(".restart_chat_id")
-            if os.path.exists(".restart_time"):
-                os.remove(".restart_time")
-            notified = True
-        except Exception as e:
-            print("Gagal kirim notifikasi ke lokasi restart:", e)
-
 async def main():
     """Main function to start the userbot with optimizations for 30k+ groups"""
     print("🚀 Starting uModCore userbot...")
@@ -113,6 +39,9 @@ async def main():
     
     # Start the client with optimizations
     await client.start()
+    
+    # Load all plugins dynamically
+    load_plugins(client)
     
     # Set client options for better performance
     client.parse_mode = 'md'  # Default parse mode
@@ -128,4 +57,7 @@ async def main():
     print("🥷 Userbot OFF, tarik diri...")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        logger.error(f"Bot crashed: {e}")

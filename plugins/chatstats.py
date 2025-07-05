@@ -1,6 +1,6 @@
 from telethon import events
 from utils.core import register_command, eor, handle_error
-from utils.db import get_db_collection
+from utils.db import get_db_collection, mongodb
 from collections import Counter
 import asyncio
 
@@ -51,8 +51,8 @@ def register_chatstats(client):
     @client.on(events.NewMessage)
     async def track_messages(event):
         # Track messages for statistics
-        if event.is_private:
-            return  # Skip private chats
+        if event.is_private or not mongodb.db:
+            return  # Skip private chats and if no db
 
         db = get_db_collection("chat_messages")
         doc = {

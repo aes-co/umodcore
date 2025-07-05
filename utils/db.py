@@ -2,8 +2,10 @@ import os
 import gzip
 import json
 import asyncio
+import logging
 from motor.motor_asyncio import AsyncIOMotorClient
-from utils.core import logger
+
+logger = logging.getLogger(__name__)
 
 MONGO_URI = os.getenv("MONGO_URI", None)
 DB_NAME = os.getenv("MONGO_DB_NAME", "umodcore")
@@ -72,6 +74,66 @@ class MongoDB:
             logger.info(f"Restored sudo users from {backup_path}")
         except Exception as e:
             logger.error(f"Failed to restore backup: {e}")
+
+    async def set_welcome_message(self, chat_id: int, message: str):
+        if not self.db:
+            return
+        await self.db.welcome.update_one(
+            {"chat_id": chat_id},
+            {"$set": {"message": message}},
+            upsert=True
+        )
+
+    async def get_welcome_message(self, chat_id: int):
+        if not self.db:
+            return None
+        doc = await self.db.welcome.find_one({"chat_id": chat_id})
+        return doc["message"] if doc else None
+
+    async def clear_welcome_message(self, chat_id: int):
+        if not self.db:
+            return
+        await self.db.welcome.delete_one({"chat_id": chat_id})
+
+    async def set_restart_info(self, chat_id: int, timestamp: float):
+        if not self.db:
+            return
+        await self.db.restart.update_one(
+            {"_id": "restart_info"},
+            {"$set": {"chat_id": chat_id, "timestamp": timestamp}},
+            upsert=True
+        )
+
+    async def get_restart_info(self):
+        if not self.db:
+            return None
+        return await self.db.restart.find_one_and_delete({"_id": "restart_info"})
+
+    async def set_user_cookies(self, user_id: int, cookies_content: str):
+        if not self.db:
+            return
+        await self.db.cookies.update_one(
+            {"user_id": user_id},
+            {"$set": {"cookies": cookies_content}},
+            upsert=True
+        )
+
+    async def get_user_cookies(self, user_id: int):
+        if not self.db:
+            return None
+        doc = await self.db.cookies.find_one({"user_id": user_id})
+        return doc["cookies"] if doc else None
+
+    async def delete_user_cookies(self, user_id: int):
+        if not self.db:
+            return
+        await self.db.cookies.delete_one({"user_id": user_id})
+
+# Helper for plugin DB collection (for compatibility with plugins)
+def get_db_collection(name):
+    if hasattr(mongodb, 'db') and mongodb.db:
+        return mongodb.db[name]
+    raise RuntimeError('MongoDB is not configured or not available.')
 
 # Singleton instance
 mongodb = MongoDB()

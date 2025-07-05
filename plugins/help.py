@@ -24,7 +24,11 @@ def register_help(client: TelegramClient):
 • `.uinfo` - Info user lain (reply/mention)
 • `.afk [alasan]` - Set status AFK dengan auto-reply
 • `.speedtest` - Test kecepatan internet
+• `.dl <url>` - Unduh media dari URL dan unggah ke Telegram
+• `.dlstatus` - Tampilkan status unduhan saat ini
+• `.dlcancel <gid>` - Batalkan unduhan
 • `.start` - Start message userbot
+• `.lang <en/id>` - Ganti bahasa bot (multilang)
 
 **⚙️ Admin Commands (Owner/Sudo only):**
 • `.restart` - Restart userbot dengan notifikasi
@@ -34,10 +38,38 @@ def register_help(client: TelegramClient):
 • `.auth @user` - Tambah sudo user (Owner only)
 • `.deauth @user` - Hapus sudo user (Owner only)
 • `.sudolist` - Lihat daftar sudo users (Owner only)
+• `.setcookie` - Atur cookie untuk yt-dlp (Owner only)
+• `.getcookie` - Dapatkan cookie yang tersimpan (Owner only)
+• `.delcookie` - Hapus cookie yang tersimpan (Owner only)
 
-**ℹ️ Info Commands:**
-• `.umodcore` - Info tentang uModCore userbot
-• `.help` - Tampilkan bantuan ini
+**🗒️ Notes & Welcome:**
+• `.save <nama> [teks]` - Simpan catatan
+• `.notes` - Lihat daftar catatan
+• `.clear <nama>` - Hapus catatan
+• `.setwelcome [pesan]` - Atur pesan selamat datang
+
+**📝 Fitur Multibahasa:**
+• `.lang en` - Ganti bahasa bot ke English
+• `.lang id` - Ganti bahasa bot ke Bahasa Indonesia
+• File bahasa: `umodcore/lang/en.json` dan `umodcore/lang/id.json` bisa diedit sesuai kebutuhan.
+
+**🗓️ Scheduler:**
+• `.schedule <waktu> <pesan>` - Jadwalkan pesan (cth: `.schedule 10m Halo!`)
+• `.cancelschedule <message_id>` - Batalkan pesan terjadwal
+
+**🛠️ Custom Command:**
+• `.addcmd <cmd> <response>` - Tambah custom command
+• `.delcmd <cmd>` - Hapus custom command
+
+**📊 Statistik & Reputation:**
+• `.chatstats` - Statistik chat
+• `.rep` - Lihat reputasi user (reply)
+• `.uprep` - Upvote reputasi user (reply)
+
+**🗂️ Download & Media:**
+• `.dl <url>` - Download media dari url
+• `.compress` - Kompres gambar (reply foto)
+• `.tomp3` - Konversi video ke mp3 (reply video)
 
 **📝 Cara Penggunaan:**
 • Semua command menggunakan prefix titik (.)

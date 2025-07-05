@@ -152,8 +152,8 @@ def register_auth(client: TelegramClient):
             await delete_after(msg, 30)
             
         except Exception as e:
-            await eor(event, f"❌ Error: {str(e)}")
-    
+            await eor(event, "❌ Terjadi kesalahan tak terduga. Insiden ini telah dicatat.")
+
     @register_command(client, "sudolist", owner_only=True)
     @handle_error
     async def list_sudo(event):
@@ -180,4 +180,12 @@ def register_auth(client: TelegramClient):
             await delete_after(msg, 60)
             
         except Exception as e:
-            await eor(event, f"❌ Error: {str(e)}")
+            await eor(event, "❌ Terjadi kesalahan tak terduga. Insiden ini telah dicatat.")
+
+    @register_command(client, "reloadsudo", owner_only=True)
+    @handle_error
+    async def reload_sudo_users_command(event):
+        """Reload sudo users from database (Owner only)"""
+        from utils.core import load_sudo_users
+        await load_sudo_users()
+        await eor(event, "✅ Daftar sudo user berhasil dimuat ulang dari database.")
