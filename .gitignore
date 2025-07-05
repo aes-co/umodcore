@@ -22,3 +22,23 @@ config.py
 .restart_time
 bot_session
 sudo_user.txt
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+
+# Direktori unduhan
+downloads/
+
+# File Log
+*.log
+
+# File Sesi Telethon
+*.session
+*.session-journal
+config.py
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
