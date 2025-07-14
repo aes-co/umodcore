@@ -4,8 +4,11 @@
 from telethon import TelegramClient, events
 from telethon.tl.types import User, Message
 from functools import wraps
-from typing import Callable, Union, List, Optional
+from typing import Callable, Union, List, Optional, Tuple
 import logging
+import json
+import contextvars
+import datetime
 import time
 import asyncio
 import os
@@ -17,15 +20,15 @@ from utils.db import mongodb
 load_dotenv()
 
 # Get configuration from environment
-OWNER_ID = int(os.getenv("OWNER_ID"))
-OWNER_USERNAME = os.getenv("OWNER_USERNAME")
-LOG_CHANNEL = int(os.getenv("LOG_CHANNEL")) if os.getenv("LOG_CHANNEL") else None
-SOURCE_CODE = os.getenv("SOURCE_CODE", "https://github.com/aes-co/umodcore")
+OWNER_ID: int = int(os.getenv("OWNER_ID"))
+OWNER_USERNAME: Optional[str] = os.getenv("OWNER_USERNAME")
+LOG_CHANNEL: Optional[int] = int(os.getenv("LOG_CHANNEL")) if os.getenv("LOG_CHANNEL") else None
+SOURCE_CODE: str = os.getenv("SOURCE_CODE", "https://github.com/aes-co/umodcore")
 
 # Sudo users management with MongoDB fallback
-SUDO_USERS = set()
+SUDO_USERS: set[int] = set()
 
-async def load_sudo_users():
+async def load_sudo_users() -> None:
     """Load sudo users from MongoDB or fallback to local file"""
     global SUDO_USERS
     if mongodb.db:
@@ -43,7 +46,7 @@ async def load_sudo_users():
     except Exception as e:
         logging.error(f"Error loading sudo users from file: {e}")
 
-async def save_sudo_users():
+async def save_sudo_users() -> None:
     """Save sudo users to MongoDB and local file"""
     if mongodb.db:
         try:
@@ -62,12 +65,12 @@ async def save_sudo_users():
     except Exception as e:
         logging.error(f"Error saving sudo users to file: {e}")
 
-async def add_sudo_user(user_id: int):
+async def add_sudo_user(user_id: int) -> None:
     """Add user to sudo list"""
     SUDO_USERS.add(user_id)
     await save_sudo_users()
 
-async def remove_sudo_user(user_id: int):
+async def remove_sudo_user(user_id: int) -> None:
     """Remove user from sudo list"""
     SUDO_USERS.discard(user_id)
     await save_sudo_users()
@@ -84,12 +87,12 @@ def is_admin(user_id: int) -> bool:
 asyncio.get_event_loop().run_until_complete(load_sudo_users())
 
 # High-performance message queue system for 30k+ groups
-message_queues = defaultdict(asyncio.Queue)
-last_message_time = defaultdict(float)
-queue_processors = {}
-RATE_LIMIT = 0.1  # Reduced to 100ms for faster processing
+message_queues: defaultdict[int, asyncio.Queue] = defaultdict(asyncio.Queue)
+last_message_time: defaultdict[int, float] = defaultdict(float)
+queue_processors: dict[int, asyncio.Task] = {}
+RATE_LIMIT: float = 0.1  # Reduced to 100ms for faster processing
 
-async def process_message_queue(chat_id: int):
+async def process_message_queue(chat_id: int) -> None:
     """Process messages in queue for a specific chat with optimized rate limiting"""
     while True:
         try:
@@ -114,7 +117,7 @@ async def process_message_queue(chat_id: int):
             logging.error(f"Error processing message queue for chat {chat_id}: {e}")
             continue
 
-async def queue_message(chat_id: int, func, *args, **kwargs):
+async def queue_message(chat_id: int, func: Callable, *args, **kwargs) -> None:
     """Add message to queue with optimized processor management"""
     # Start processor if not already running
     if chat_id not in queue_processors:
@@ -129,34 +132,72 @@ async def queue_message(chat_id: int, func, *args, **kwargs):
         # If queue is full, process immediately without queue
         try:
             await func(*args, **kwargs)
-        except:
-            pass
+        except Exception as e:
+            logging.error(f"Error processing message immediately: {e}")
 
-async def send_message_queued(client, chat_id, *args, **kwargs):
+async def send_message_queued(client: TelegramClient, chat_id: int, *args, **kwargs) -> None:
     """Queue message send with rate limiting"""
     await queue_message(chat_id, client.send_message, chat_id, *args, **kwargs)
 
-async def edit_message_queued(message, *args, **kwargs):
+async def edit_message_queued(message: Message, *args, **kwargs) -> None:
     """Queue message edit with rate limiting"""
     await queue_message(message.chat_id, message.edit, *args, **kwargs)
 
-async def reply_message_queued(message, *args, **kwargs):
+async def reply_message_queued(message: Message, *args, **kwargs) -> None:
     """Queue message reply with rate limiting"""
     await queue_message(message.chat_id, message.reply, *args, **kwargs)
 
 # Setup logging
 logger = logging.getLogger(__name__)
 
+# Context variable for structured logging context
+log_context: contextvars.ContextVar[dict] = contextvars.ContextVar("log_context", default={})
+
+class ContextFilter(logging.Filter):
+    """Inject contextual information into log records"""
+    def filter(self, record):
+        context = log_context.get({})
+        for key, value in context.items():
+            setattr(record, key, value)
+        return True
+
+# Add context filter to logger
+logger.addFilter(ContextFilter())
+
+def set_log_context(**kwargs):
+    """Set context variables for logging"""
+    current_context = log_context.get().copy()
+    current_context.update(kwargs)
+    log_context.set(current_context)
+
+def clear_log_context():
+    """Clear logging context"""
+    log_context.set({})
+
+# Helper function for structured logging
+def log_info(message: str, **kwargs):
+    set_log_context(**kwargs)
+    logger.info(message)
+    clear_log_context()
+
+
+def log_error(message: str, **kwargs):
+    set_log_context(**kwargs)
+    logger.error(message)
+    clear_log_context()
+
+
 # Global state management
 class BotState:
-    def __init__(self):
-        self.start_time = time.time()
-        self.command_count = 0
-        self.last_command_time = None
-        self.active_commands = set()
-        self.afk_users = {}  # user_id: {since: datetime, reason: str, name: str}
+    """Class to manage global bot state such as AFK users and command stats"""
+    def __init__(self) -> None:
+        self.start_time: float = time.time()
+        self.command_count: int = 0
+        self.last_command_time: Optional[float] = None
+        self.active_commands: set[int] = set()
+        self.afk_users: dict[int, dict[str, Union[str, 'datetime.datetime']]] = {}  # user_id: {since: datetime, reason: str, name: str}
 
-    def set_afk(self, user_id: int, name: str, reason: str = None):
+    def set_afk(self, user_id: int, name: str, reason: Optional[str] = None) -> None:
         """Set a user as AFK"""
         from datetime import datetime
         self.afk_users[user_id] = {
@@ -165,15 +206,15 @@ class BotState:
             "name": name
         }
 
-    def remove_afk(self, user_id: int):
+    def remove_afk(self, user_id: int) -> Optional[dict]:
         """Remove AFK status of a user"""
         return self.afk_users.pop(user_id, None)
 
-    def get_afk_status(self, user_id: int):
+    def get_afk_status(self, user_id: int) -> Optional[dict]:
         """Get AFK status of a user"""
         return self.afk_users.get(user_id)
 
-    def is_afk(self, user_id: int):
+    def is_afk(self, user_id: int) -> bool:
         """Check if a user is AFK"""
         return user_id in self.afk_users
 
@@ -211,8 +252,7 @@ def log_command(func: Callable) -> Callable:
         return await func(event, *args, **kwargs)
     return wrapper
 
-# Optimized message handling utilities
-async def eor(event, text: str, **kwargs) -> Message:
+async def eor(event, text: str, **kwargs) -> Optional[Message]:
     """Edit or reply to a message with queue management"""
     try:
         if event.out:
@@ -230,7 +270,109 @@ async def eor(event, text: str, **kwargs) -> Message:
             logger.error(f"Fallback reply also failed: {fallback_error}")
             return None
 
-async def delete_after(event, seconds: int = 5):
+def log_command(func: Callable) -> Callable:
+    """Decorator to log command usage"""
+    @wraps(func)
+    async def wrapper(event, *args, **kwargs):
+        bot_state.command_count += 1
+        bot_state.last_command_time = time.time()
+        command = event.raw_text.split()[0] if event.raw_text else "Unknown"
+        logger.info(f"Command used: {command} by {event.sender_id}")
+        return await func(event, *args, **kwargs)
+    return wrapper
+
+async def eor(event, text: str, **kwargs) -> Optional[Message]:
+    """Edit or reply to a message with queue management"""
+    try:
+        if event.out:
+            # For outgoing messages, edit directly without queue for better performance
+            return await event.edit(text, **kwargs)
+        else:
+            # For incoming messages, reply with queue management
+            return await event.reply(text, **kwargs)
+    except Exception as e:
+        logger.error(f"Error in eor function: {e}")
+        # Fallback to direct reply if queue fails
+        try:
+            return await event.reply(text, **kwargs)
+        except Exception as fallback_error:
+            logger.error(f"Fallback reply also failed: {fallback_error}")
+            return None
+async def delete_after(event, seconds: int = 5) -> None:
+     """Delete a message after specified seconds"""
+     try:
+         await asyncio.sleep(seconds)
+         await event.delete()
+     except Exception as e:
+         logger.error(f"Error deleting message: {e}")
+
+def format_duration(seconds: float) -> str:
+    """Format duration in seconds to human readable string"""
+    minutes, seconds = divmod(int(seconds), 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    
+    parts = []
+    if days > 0:
+        parts.append(f"{days}d")
+    if hours > 0:
+        parts.append(f"{hours}h")
+    if minutes > 0:
+        parts.append(f"{minutes}m")
+    if seconds > 0 or not parts:
+        parts.append(f"{seconds}s")
+        
+    return " ".join(parts)
+
+def format_duration(seconds: float) -> str:
+    """Format duration in seconds to human readable string"""
+    minutes, seconds = divmod(int(seconds), 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    
+    parts = []
+    if days > 0:
+        parts.append(f"{days}d")
+    if hours > 0:
+        parts.append(f"{hours}h")
+    if minutes > 0:
+        parts.append(f"{minutes}m")
+    if seconds > 0 or not parts:
+        parts.append(f"{seconds}s")
+        
+    return " ".join(parts)
+
+def log_command(func: Callable) -> Callable:
+    """Decorator to log command usage"""
+    @wraps(func)
+    async def wrapper(event, *args, **kwargs):
+        bot_state.command_count += 1
+        bot_state.last_command_time = time.time()
+        command = event.raw_text.split()[0] if event.raw_text else "Unknown"
+        logger.info(f"Command used: {command} by {event.sender_id}")
+        return await func(event, *args, **kwargs)
+    return wrapper
+
+# Optimized message handling utilities
+async def eor(event, text: str, **kwargs) -> Optional[Message]:
+    """Edit or reply to a message with queue management"""
+    try:
+        if event.out:
+            # For outgoing messages, edit directly without queue for better performance
+            return await event.edit(text, **kwargs)
+        else:
+            # For incoming messages, reply with queue management
+            return await event.reply(text, **kwargs)
+    except Exception as e:
+        logger.error(f"Error in eor function: {e}")
+        # Fallback to direct reply if queue fails
+        try:
+            return await event.reply(text, **kwargs)
+        except Exception as fallback_error:
+            logger.error(f"Fallback reply also failed: {fallback_error}")
+            return None
+
+async def delete_after(event, seconds: int = 5) -> None:
     """Delete a message after specified seconds"""
     try:
         await asyncio.sleep(seconds)
@@ -277,7 +419,7 @@ def register_command(
         return command_handler
     return decorator
 
-async def handle_command(event, func, owner_only_check):
+async def handle_command(event, func: Callable, owner_only_check: bool) -> None:
     """Handle command execution with error handling"""
     try:
         if owner_only_check and event.sender_id != OWNER_ID:
@@ -314,12 +456,12 @@ def italic(text: str) -> str:
     return f"_{text}_"
 
 # Plugin registration helper
-def load_plugins(client: TelegramClient):
+def load_plugins(client: TelegramClient) -> None:
     """Dynamically load all plugins"""
     import os
     import importlib
     import sys
-    # Pastikan root project ada di sys.path
+    # Ensure root project is in sys.path
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     if root_dir not in sys.path:
         sys.path.insert(0, root_dir)
@@ -338,15 +480,15 @@ def load_plugins(client: TelegramClient):
             except Exception as e:
                 logger.error(f"Failed to load plugin {plugin_name}: {e}")
 
-def reload_plugins(client: TelegramClient) -> tuple[list, list]:
+def reload_plugins(client: TelegramClient) -> Tuple[List[str], List[str]]:
     """Reload all plugins in the plugins directory"""
     import os
     import sys
     import importlib
     
     folder = "plugins"
-    successful = []
-    failed = []
+    successful: List[str] = []
+    failed: List[str] = []
 
     for file in os.listdir(folder):
         if file.endswith(".py") and not file.startswith("__"):
@@ -388,7 +530,7 @@ async def restart_bot(event) -> None:
     await asyncio.sleep(1)
     os.execv(sys.executable, [sys.executable, "main.py"])
 
-def get_log_file() -> str:
+def get_log_file() -> Optional[str]:
     """Get the path to the active log file"""
     import os
     
@@ -400,7 +542,7 @@ def get_log_file() -> str:
     return None
 
 # Bot info constants
-REPO_MSG = """
+REPO_MSG: str = """
 🐾 **MODCORE USERBOT** 🐾
 
 📦 Repo: [ModCore Userbot](https://github.com/aes-co/umodcore)
@@ -420,7 +562,7 @@ REPO_BUTTONS = [
     ]
 ]
 
-INTRO_MSG = """✨ **Terima kasih telah menggunakan ModCore Userbot!**
+INTRO_MSG: str = """✨ **Terima kasih telah menggunakan ModCore Userbot!**
 
 🔧 Gunakan perintah `.help` untuk melihat daftar command.
 📌 Jangan lupa cek repo dan dokumentasi ya!
@@ -441,7 +583,7 @@ INTRO_MSG = """✨ **Terima kasih telah menggunakan ModCore Userbot!**
 • `.auth @user` - Tambah sudo user
 """
 
-PHOTO_URL = "https://octodex.github.com/images/mona-whisper.gif"
+PHOTO_URL: str = "https://octodex.github.com/images/mona-whisper.gif"
 
 # State management helpers
 def get_uptime() -> str:
